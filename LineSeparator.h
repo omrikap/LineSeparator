@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #define MAX_VECTOR_LENGTH 74
+typedef unsigned long array_length;
 // todo training function
 
 // todo separating function
