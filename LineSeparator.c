@@ -65,20 +65,28 @@ double vectorInnerProduct (vector vector1, vector vector2)
 int parseFile(FILE *theFile)
 {
 	int dimension = 0;
-	int trainingExamples;
+	int trainingExamples = 0;
 	char line[151];
-	for (int i = 0; i < 2; ++i)
+	for (int i = 0; i < 2; ++i) // todo change logic
 	{
 		fgets(line, 151, theFile);
-		puts(line); // todo remove
-		sscanf(line, "%d", &dimension);
+		if (i == 0)
+		{
+			sscanf(line, "%d", &dimension);
+		}
+		else if (i == 1)
+		{
+			sscanf(line, "%d", &trainingExamples);
+		}
 	}
+	int index = 0;
 	while (fgets(line, 151, theFile) != NULL)
 	{
 		char *coordinate = NULL;
 		coordinate = strtok(line, ",");
 		puts("this is coordinate"); // todo remove
 		puts(coordinate); // todo remove
+//		strtod();
 		while ((coordinate = strtok(NULL, ",")) != NULL)
 		{
 			puts("this is coordinate"); // todo remove
