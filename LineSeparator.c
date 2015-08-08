@@ -17,7 +17,9 @@
 // ------------------------------ functions -----------------------------
 
 
-// todo typedef struct vector
+/**
+ * A struct that represents a vector, with maximum 74 coordinates.
+ */
 typedef struct vector {
 	int _label;
 	double _coordinates[MAX_VECTOR_LENGTH];
@@ -38,7 +40,7 @@ double vectorInnerProduct (vector, vector);
 vector vectorAddition(vector, vector);
 
 // todo parse file
-int parseFile(); // todo add parameters
+int parseFile(FILE*);
 
 vector vectorAddition(vector vector1, vector vector2)
 {
@@ -60,15 +62,37 @@ double vectorInnerProduct (vector vector1, vector vector2)
 	return result;
 }
 
-int main()
+int parseFile(FILE *theFile)
 {
-	// todo -------------- functions driver. remove --------------------------
-	vector a, b, c;
-	a._coordinates[0] = 1.00;
-	b._coordinates[0] = 2.3;
-	c = vectorAddition(a, b);
-	double d = vectorInnerProduct(b,c);
-	printf("the inner product is: %f\n", d);
-	 // todo ----------------------------------------------------------------
+	int dimension = 0;
+	int trainingExamples;
+	char line[151];
+	for (int i = 0; i < 2; ++i)
+	{
+		fgets(line, 151, theFile);
+		puts(line); // todo remove
+		sscanf(line, "%d", &dimension);
+	}
+	while (fgets(line, 151, theFile) != NULL)
+	{
+		char *coordinate = NULL;
+		coordinate = strtok(line, ",");
+		puts("this is coordinate"); // todo remove
+		puts(coordinate); // todo remove
+		while ((coordinate = strtok(NULL, ",")) != NULL)
+		{
+			puts("this is coordinate"); // todo remove
+			puts(coordinate); // todo remove
+			// todo continue
+		}
+	}
+	return 0;
+}
+
+int main(int argc, char* argv[])
+{
+	FILE * dataFile = fopen(argv[1], "r");
+	parseFile(dataFile);
+	/* fopen, fclose, fgets,atoi, atof, strtok */
 	return 0;
 }
