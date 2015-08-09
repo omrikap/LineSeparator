@@ -1,7 +1,7 @@
 /**
 * @file LineSeparator.c
 * @author  Omri Kaplan
-* @date 4 Aug 2015
+* @date 9 Aug 2015
 *
 * @brief todo
 *
@@ -13,6 +13,13 @@
 
 // -------------------------- const definitions -------------------------
 
+/**
+ * A struct that represents a vector, with maximum 74 coordinates.
+ */
+typedef struct vector {
+	int _label;
+	double _coordinates[MAX_VECTOR_LENGTH];
+} vector;
 
 // ------------------------------ functions -----------------------------
 
@@ -21,106 +28,125 @@
  * @param vector1 the first vector.
  * @param vector2 the second vector.
  */
-double vectorInnerProduct (vector, vector);
+double vectorInnerProduct (vector, vector, int);
 
 /**
  * @brief The addition function of two vector structs.
  * @param vector1 the first vector.
  * @param vector2 the second vector.
  */
-vector vectorAddition(vector, vector);
+vector vectorAddition(vector, vector, int);
 
 /**
  * @brief todo
  */
-vector scalarMultiplication(vector, double);
+vector scalarMultiplication(vector, double, int);
 
 /**
- * @brief The function that calculates the position of the hyper-...
+ * @brief The function that calculates the position of the hyper-plane.
  * todo complete
  */
-void updateVector(vector, vector, int);
+vector updateVector(const vector, const vector, const int);
 
+/**
+ *
+ */
 vector lineToVector(char*, int);
 
-// todo parse file
-int parseFile(FILE*);
+/**
+ *
+ */
+int getSign(double);
 
-vector vectorAddition(vector vector1, vector vector2)
+/**
+ *
+ */
+int trainingSession(FILE*, vector*);
+
+/**
+ *
+ */
+int separatingSession(FILE*, vector*, int);
+
+vector vectorAddition(vector vector1, vector vector2, int dimension)
 {
 	vector result = vector1;
-	for (int i=0; i<MAX_VECTOR_LENGTH; ++i)
+	for (int i=0; i < dimension; ++i)
 	{
 		result._coordinates[i] = vector1._coordinates[i] + vector2._coordinates[i];
 	}
 	return result;
 }
 
-vector scalarMultiplication(vector theVector, double scalar) // todo test
+vector scalarMultiplication(vector theVector, double scalar, int dimension) // todo test
 {
 	vector result = theVector;
-	for (int i = 0; i < MAX_VECTOR_LENGTH; ++i)
+	for (int i = 0; i < dimension; ++i)
 	{
 		result._coordinates[i] = theVector._coordinates[i] * scalar;
 	}
 	return result;
 }
 
-double vectorInnerProduct(vector vector1, vector vector2)
+double vectorInnerProduct(vector vector1, vector vector2, int dimension)
 {
 	double result = 0;
-	for (int i=0; i<MAX_VECTOR_LENGTH; ++i)
+	for (int i=0; i < dimension; ++i)
 	{
 		result += vector1._coordinates[i] * vector2._coordinates[i];
 	}
 	return result;
 }
 
+int getSign(double innerProductValue)
+{
+	if (fabs(innerProductValue) < EPSILON)
+	{
+		return -1;
+	}
+	else
+	{
+		return (int) (fabs(innerProductValue)/innerProductValue);
+	}
+}
+
 vector lineToVector(char* line, int dimension)
 {
-	vector x;
+	vector x = {0};
 	int index = 0;
 	x._coordinates[index] = atof(strtok(line, COORDINATE_SEPARATOR));
-	printf("%d'th coordinate: %f\n", index, x._coordinates[index]);
 	++index;
 	for (; index < dimension; ++index)
 	{
 		x._coordinates[index] = atof(strtok(NULL, COORDINATE_SEPARATOR));
-		printf("%d'th coordinate: %f\n", index, x._coordinates[index]);
 	}
-	x._label = atoi(strtok(NULL, COORDINATE_SEPARATOR));
+	char *label = strtok(NULL, COORDINATE_SEPARATOR);
+	if (label != NULL)
+	{
+		x._label = atoi(label);
+	}
 	return x;
 }
 
-void updateVector( vector separator, vector dataVector, int tag) // todo change dataVector name,
-// implement
+vector updateVector( vector separator, vector dataVector, int dimension) // todo change dataVector
 {
-
-}
-
-int trainingSession(FILE *pFile, int dimension, int trainingExamples, vector separator)
-{
-	char line[151];
-	puts("here"); // todo remove
-	for (int lineNumber = 0; lineNumber < trainingExamples; ++lineNumber)
+	double innerProduct = getSign(vectorInnerProduct(dataVector, separator, dimension));
+	if (innerProduct != dataVector._label)
 	{
-		fgets(line, 151, pFile);
-		vector dataVector = lineToVector(line, dimension);
-//		updateVector(separator, dataVector, dataVector._label);
-		printf("dataVector._label: %d\n", dataVector._label);
+		separator = vectorAddition(separator, scalarMultiplication(dataVector, dataVector
+				._label, dimension), dimension);
 	}
-//	puts("returning"); // todo remove
-	return 0;
+	return separator;
 }
 
-int parseFile(FILE *theFile)
+int trainingSession(FILE *pFile, vector *separator)
 {
 	int dimension = 0;
 	int trainingExamples = 0;
 	char line[151];
 	for (int i = 0; i < 2; ++i) // todo improve logic
 	{
-		fgets(line, 151, theFile);
+		fgets(line, 151, pFile);
 		if (i == 0)
 		{
 			sscanf(line, "%d", &dimension);
@@ -130,24 +156,45 @@ int parseFile(FILE *theFile)
 			sscanf(line, "%d", &trainingExamples);
 		}
 	}
-	vector w; // todo where to put?
-	vector x;
-	trainingSession(theFile, dimension, trainingExamples, w);
-	while (fgets(line, 151, theFile) != NULL)
+	for (int lineNumber = 0; lineNumber < trainingExamples; ++lineNumber)
 	{
-		x = lineToVector(line, dimension);
+		fgets(line, 151, pFile);
+		vector dataVector = lineToVector(line, dimension);
+		*separator = updateVector(*separator, dataVector, dimension);
 	}
-//	for (int j = 0; j < MAX_VECTOR_LENGTH; ++j) // todo remove
-//	{
-//		printf("%f\n", x._coordinates[j]);
-//	}
+	return dimension;
+}
+
+int separatingSession(FILE *pFile, vector *separator, int dimension)
+{
+	char line[151];
+	while (fgets(line, 151, pFile) != NULL)
+	{
+		vector dataVector = lineToVector(line, dimension); // todo change 0 to dimension variable
+		double point = vectorInnerProduct(dataVector, *separator, dimension);
+		if (fabs(point) < EPSILON || point <= 0)
+		{
+			puts("-1");
+		}
+		else
+		{
+			puts("1");
+		}
+	}
+	return 0;
+}
+
+int trainAndSeparateData(char *fileName)
+{
+	FILE *pFile = fopen(fileName, "r");
+	vector separator = {0};
+	int dimension = trainingSession(pFile, &separator);
+	separatingSession(pFile, &separator, dimension);
 	return 0;
 }
 
 int main(int argc, char* argv[])
 {
-	FILE * dataFile = fopen(argv[1], "r");
-	parseFile(dataFile);
-	/* fopen, fclose, fgets,atoi, atof, strtok */
+	trainAndSeparateData(argv[1]);
 	return 0;
 }
